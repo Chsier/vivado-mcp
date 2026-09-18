@@ -25,7 +25,11 @@ import uuid
 from pathlib import Path
 
 from vivado_mcp.tcl_scripts import QUERY_CURRENT_PROJECT
-from vivado_mcp.vivado.base_session import BaseSession, SessionState
+from vivado_mcp.vivado.base_session import (
+    BaseSession,
+    SessionState,
+    build_vivado_env,
+)
 from vivado_mcp.vivado.tcl_utils import TclResult, clean_output
 
 logger = logging.getLogger(__name__)
@@ -448,6 +452,7 @@ class GuiSession(BaseSession):
                     "-mode", "gui",
                     "-source", tmp_script,
                     "-nojournal", "-nolog",
+                    env=build_vivado_env(self.vivado_path),
                     stdin=asyncio.subprocess.DEVNULL,
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.DEVNULL,

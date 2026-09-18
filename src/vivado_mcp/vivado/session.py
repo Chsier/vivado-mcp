@@ -14,7 +14,11 @@ import collections
 import logging
 import time
 
-from vivado_mcp.vivado.base_session import BaseSession, SessionState
+from vivado_mcp.vivado.base_session import (
+    BaseSession,
+    SessionState,
+    build_vivado_env,
+)
 from vivado_mcp.vivado.tcl_utils import (
     TclResult,
     clean_output,
@@ -86,6 +90,7 @@ class SubprocessSession(BaseSession):
                 self.vivado_path,
                 "-mode", "tcl",
                 "-nojournal", "-nolog",
+                env=build_vivado_env(self.vivado_path),
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,

@@ -7,7 +7,11 @@ import asyncio
 
 import pytest
 
-from vivado_mcp.vivado.base_session import SessionState
+import vivado_mcp.vivado.base_session as base_session
+from vivado_mcp.vivado.base_session import (
+    SessionState,
+    build_vivado_env,
+)
 from vivado_mcp.vivado.session import SubprocessSession
 from vivado_mcp.vivado.session_manager import SessionManager, _validate_session_id
 from vivado_mcp.vivado.tcl_utils import TclResult
@@ -15,6 +19,45 @@ from vivado_mcp.vivado.tcl_utils import TclResult
 
 class _AliveProcess:
     returncode = None
+
+
+class TestVivadoProcessEnv:
+    """Windows 批处理启动器依赖的架构变量可能被受限父进程过滤。"""
+
+    def test_windows_batch_env_adds_amd64_when_missing(self, monkeypatch):
+        monkeypatch.setattr(base_session.sys, "platform", "win32")
+        monkeypatch.delenv("PROCESSOR_ARCHITECTURE", raising=False)
+        monkeypatch.setenv("MCP_ENV_SENTINEL", "kept")
+
+        env = build_vivado_env(r"D:\Xilinx\Vivado\2018.3\bin\vivado.bat")
+
+        assert env is not None
+        assert env["PROCESSOR_ARCHITECTURE"] == "AMD64"
+        assert env["MCP_ENV_SENTINEL"] == "kept"
+
+    def test_windows_batch_env_preserves_existing_architecture(self, monkeypatch):
+        monkeypatch.setattr(base_session.sys, "platform", "win32")
+        monkeypatch.setenv("PROCESSOR_ARCHITECTURE", "ARM64")
+
+        env = build_vivado_env(r"D:\Xilinx\Vivado\2018.3\bin\vivado.bat")
+
+        assert env is None
+
+    def test_windows_exe_env_is_not_overridden(self, monkeypatch):
+        monkeypatch.setattr(base_session.sys, "platform", "win32")
+        monkeypatch.delenv("PROCESSOR_ARCHITECTURE", raising=False)
+
+        env = build_vivado_env(r"D:\Xilinx\Vivado\bin\vivado.exe")
+
+        assert env is None
+
+    def test_non_windows_batch_env_is_not_overridden(self, monkeypatch):
+        monkeypatch.setattr(base_session.sys, "platform", "linux")
+        monkeypatch.delenv("PROCESSOR_ARCHITECTURE", raising=False)
+
+        env = build_vivado_env("/tools/Xilinx/Vivado/bin/vivado")
+
+        assert env is None
 
 
 class TestSubprocessInflightOwnership:

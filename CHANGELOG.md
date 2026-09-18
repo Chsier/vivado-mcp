@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### 修复
+
+- **Windows 64-bit 架构变量兜底**：受限 MCP 父进程未传递
+  `PROCESSOR_ARCHITECTURE` 时，为 `.bat/.cmd` 子进程补入 `AMD64`，
+  避免 Vivado `loader.bat` 误走 32-bit 分支后立即退出。
+
 ## [0.3.25] — 2026-08-09
 
 > 本版基于同类 Vivado MCP 的协议、工作流和安装体验调研，吸收有效模式，

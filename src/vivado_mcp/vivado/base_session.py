@@ -9,11 +9,32 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import time
 from abc import ABC, abstractmethod
 from enum import Enum
 
 from vivado_mcp.vivado.tcl_utils import TclResult
+
+
+def build_vivado_env(vivado_path: str) -> dict[str, str] | None:
+    """构建 Vivado 子进程环境，补齐 Windows 批处理启动器依赖的架构变量。
+
+    Codex 等受限父进程可能只向 MCP server 传递精简环境。缺少
+    ``PROCESSOR_ARCHITECTURE`` 时，Vivado ``loader.bat`` 会误判为 32-bit，
+    随后因 ``win32`` 运行目录不存在而立即退出。
+    """
+    if sys.platform != "win32" or not vivado_path.lower().endswith((".bat", ".cmd")):
+        return None
+    if sys.maxsize <= 2**32:
+        return None
+
+    env = os.environ.copy()
+    if not env.get("PROCESSOR_ARCHITECTURE"):
+        env["PROCESSOR_ARCHITECTURE"] = "AMD64"
+        return env
+    return None
 
 
 class SessionState(str, Enum):
